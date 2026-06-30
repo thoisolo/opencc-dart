@@ -55,7 +55,10 @@ final class ZhConverter {
     final buf = CharArray(size: size);
     str.pavedBy('$config.json');
     final native = lib.opencc_open(str.pointer);
-    if (native.address < 0) {
+    // OpenCC trả sentinel lỗi là (opencc_t)-1 == 0xFFFFFFFFFFFFFFFF. Phải so == -1,
+    // KHÔNG dùng `< 0`: Android arm64 bật pointer tagging (TBI/Scudo) nên con trỏ
+    // heap hợp lệ có byte cao != 0 -> đọc thành int64 âm -> `< 0` báo lỗi giả.
+    if (native.address == -1) {
       final err = CharArray.toDartString(lib.opencc_error());
       str.dispose();
       buf.dispose();
