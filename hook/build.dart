@@ -47,6 +47,22 @@ String _localLib(BuildInput input) {
     throw StateError('Thiếu native/$sub/libopencc.dylib trong package opencc.');
   }
 
+  // Android: chọn .so self-contained theo ABI (vendored).
+  if (os == OS.android) {
+    final arch = input.config.code.targetArchitecture;
+    final abi = switch (arch) {
+      Architecture.arm64 => 'arm64-v8a',
+      Architecture.arm => 'armeabi-v7a',
+      Architecture.x64 => 'x86_64',
+      _ => throw UnsupportedError('Android arch $arch chưa hỗ trợ'),
+    };
+    final f = File.fromUri(
+      input.packageRoot.resolve('native/android/$abi/libopencc.so'),
+    );
+    if (f.existsSync()) return f.path;
+    throw StateError('Thiếu native/android/$abi/libopencc.so trong package opencc.');
+  }
+
   // macOS host: dùng dylib brew (chỉ để spike trên máy).
   if (os == OS.macOS) {
     const candidates = [
